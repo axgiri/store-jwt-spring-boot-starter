@@ -1,3 +1,3 @@
-package tech.axgiri.jwtstore.dto;
+package tech.axgiri.jwtstore.common.dto;
 
 public record RawSignature(String hash) {}

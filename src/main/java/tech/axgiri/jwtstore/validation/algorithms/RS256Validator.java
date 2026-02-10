@@ -1,4 +1,4 @@
-package tech.axgiri.jwtstore.rs256;
+package tech.axgiri.jwtstore.validation.algorithms;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -8,19 +8,30 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
 
-import tech.axgiri.jwtstore.dto.Header;
-import tech.axgiri.jwtstore.dto.Payload;
-import tech.axgiri.jwtstore.dto.RawSignature;
-import tech.axgiri.jwtstore.exception.ExpiredJwtException;
-import tech.axgiri.jwtstore.exception.InvalidIssuerException;
-import tech.axgiri.jwtstore.exception.InvalidSignatureException;
+import tech.axgiri.jwtstore.common.dto.AlgorithmEnum;
+import tech.axgiri.jwtstore.common.dto.Header;
+import tech.axgiri.jwtstore.common.dto.Payload;
+import tech.axgiri.jwtstore.common.dto.RawSignature;
+import tech.axgiri.jwtstore.common.exception.ExpiredJwtException;
+import tech.axgiri.jwtstore.common.exception.InvalidIssuerException;
+import tech.axgiri.jwtstore.common.exception.InvalidSignatureException;
+import tech.axgiri.jwtstore.validation.AlgorithmStrategy;
 
-public class Validator {
+public class RS256Validator implements AlgorithmStrategy {
 
-    private String issuer = "store-auth";
+    private final String expectedIssuer;
 
-    public void validate(Header header, Payload payload, RawSignature signature, String publicKey)
-            throws InvalidSignatureException, InvalidIssuerException, ExpiredJwtException {
+    public RS256Validator(String expectedIssuer) {
+        this.expectedIssuer = expectedIssuer;
+    }
+
+    @Override
+    public AlgorithmEnum getAlgorithm() {
+        return AlgorithmEnum.RS256;
+    }
+
+    @Override
+    public void validate(Header header, Payload payload, RawSignature signature, String publicKey) {
         validateAlgorithm(header.alg());
         validateExpiration(payload.exp());
         validateIssuer(payload.iss());
@@ -28,7 +39,7 @@ public class Validator {
     }
 
     private void validateAlgorithm(String alg) throws InvalidSignatureException {
-        if (!"RS256".equals(alg)) {
+        if (!getAlgorithm().name().equals(alg)) {
             throw new InvalidSignatureException("Unsupported algorithm: " + alg);
         }
     }
@@ -40,7 +51,7 @@ public class Validator {
     }
 
     private void validateIssuer(String iss) throws InvalidIssuerException {
-        if (!issuer.equals(iss)) {
+        if (!expectedIssuer.equals(iss)) {
             throw new InvalidIssuerException("Invalid issuer: " + iss);
         }
     }

@@ -1,18 +1,20 @@
-package tech.axgiri.jwtstore.rs256;
+package tech.axgiri.jwtstore.token;
 
-import tech.axgiri.jwtstore.Decoder;
-import tech.axgiri.jwtstore.dto.Header;
-import tech.axgiri.jwtstore.dto.Payload;
-import tech.axgiri.jwtstore.dto.RawSignature;
+import java.util.Base64;
 
-public class Service {
+import tech.axgiri.jwtstore.common.dto.Header;
+import tech.axgiri.jwtstore.common.dto.Payload;
+import tech.axgiri.jwtstore.common.dto.RawSignature;
+import tools.jackson.databind.ObjectMapper;
+
+public class JwtTokenService {
 
     public Header getTokenHeader(String rawToken) {
-        return Decoder.decodeTo(getRawHeader(rawToken), Header.class);
+        return decodeTo(getRawHeader(rawToken), Header.class);
     }
 
     public Payload getTokenPayload(String rawToken) {
-        return Decoder.decodeTo(getRawPayload(rawToken), Payload.class);
+        return decodeTo(getRawPayload(rawToken), Payload.class);
     }
 
     public RawSignature getTokenSignature(String rawToken) {
@@ -36,5 +38,11 @@ public class Service {
         int indexOfSecondDot = rawToken.lastIndexOf(".");
         String signature = rawToken.substring(indexOfSecondDot + 1);
         return new RawSignature(signature);
+    }
+
+    private <T> T decodeTo(String base64Url, Class<T> type) {
+        byte[] decoded = Base64.getUrlDecoder().decode(base64Url);
+        ObjectMapper om = new ObjectMapper();
+        return om.readValue(decoded, type);
     }
 }

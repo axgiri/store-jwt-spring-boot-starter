@@ -1,4 +1,4 @@
-package tech.axgiri.jwtstore.exception;
+package tech.axgiri.jwtstore.common.exception;
 
 public class InvalidSignatureException extends RuntimeException {
     public InvalidSignatureException(String message) {
