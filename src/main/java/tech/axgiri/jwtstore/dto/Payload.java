@@ -1,9 +1,8 @@
-package tech.axgiri.jwtstore.rs256;
+package tech.axgiri.jwtstore.dto;
 
-record Payload(
+public record Payload(
             String iss,
             long iat,
             long exp,
             String sub,
-            String roles) {
-    }
+            String roles){}
