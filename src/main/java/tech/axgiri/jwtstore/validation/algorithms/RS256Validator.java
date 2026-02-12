@@ -1,12 +1,13 @@
 package tech.axgiri.jwtstore.validation.algorithms;
 
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import tech.axgiri.jwtstore.common.dto.AlgorithmEnum;
 import tech.axgiri.jwtstore.common.dto.Header;
@@ -15,9 +16,14 @@ import tech.axgiri.jwtstore.common.dto.RawSignature;
 import tech.axgiri.jwtstore.common.exception.ExpiredJwtException;
 import tech.axgiri.jwtstore.common.exception.InvalidIssuerException;
 import tech.axgiri.jwtstore.common.exception.InvalidSignatureException;
+import tech.axgiri.jwtstore.common.exception.UnsupportedAlgorithmException;
 import tech.axgiri.jwtstore.validation.AlgorithmStrategy;
+import tools.jackson.databind.ObjectMapper;
 
 public class RS256Validator implements AlgorithmStrategy {
+
+    private static final Logger log = LoggerFactory.getLogger(RS256Validator.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final String expectedIssuer;
 
@@ -31,16 +37,19 @@ public class RS256Validator implements AlgorithmStrategy {
     }
 
     @Override
-    public void validate(Header header, Payload payload, RawSignature signature, String publicKey) {
+    public void validate(String rawHeader, String rawPayload, RawSignature signature, PublicKey publicKey) {
+        Header header = decodeHeader(rawHeader);
+        Payload payload = decodePayload(rawPayload);
+        
         validateAlgorithm(header.alg());
         validateExpiration(payload.exp());
         validateIssuer(payload.iss());
-        verifySignature(header, payload, signature, publicKey);
+        verifySignatureRaw(rawHeader, rawPayload, signature, publicKey);
     }
 
-    private void validateAlgorithm(String alg) throws InvalidSignatureException {
+    private void validateAlgorithm(String alg) throws UnsupportedAlgorithmException {
         if (!getAlgorithm().name().equals(alg)) {
-            throw new InvalidSignatureException("Unsupported algorithm: " + alg);
+            throw new UnsupportedAlgorithmException("Unsupported algorithm: " + alg);
         }
     }
 
@@ -52,45 +61,49 @@ public class RS256Validator implements AlgorithmStrategy {
 
     private void validateIssuer(String iss) throws InvalidIssuerException {
         if (!expectedIssuer.equals(iss)) {
+            log.debug("JWT issuer mismatch: expected={}, actual={}", expectedIssuer, iss);
             throw new InvalidIssuerException("Invalid issuer: " + iss);
         }
     }
 
-    private void verifySignature(Header header, Payload payload, RawSignature signature, String publicKey)
-            throws InvalidSignatureException {
+    private void verifySignatureRaw(String rawHeader, String rawPayload, RawSignature signature, PublicKey publicKey) throws InvalidSignatureException {
+        String dataToVerify = rawHeader + "." + rawPayload;
 
-        String dataToVerify = header + "." + payload;
-
-        boolean isValid = verify(dataToVerify, signature.hash(), publicKey);
+        boolean isValid = verify(dataToVerify, signature.value(), publicKey);
 
         if (!isValid) {
             throw new InvalidSignatureException("Invalid signature");
         }
     }
 
-    private boolean verify(String data, String signature, String publicKey) {
+    private Header decodeHeader(String rawHeader) {
+        byte[] decoded = Base64.getUrlDecoder().decode(rawHeader);
         try {
-            PublicKey publicKeyObj = parsePublicKey(publicKey);
+            return OBJECT_MAPPER.readValue(decoded, Header.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decode header", e);
+        }
+    }
+
+    private Payload decodePayload(String rawPayload) {
+        byte[] decoded = Base64.getUrlDecoder().decode(rawPayload);
+        try {
+            return OBJECT_MAPPER.readValue(decoded, Payload.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decode payload", e);
+        }
+    }
+
+    private boolean verify(String data, String signature, PublicKey publicKey) {
+        try {
             byte[] decodedSignature = Base64.getUrlDecoder().decode(signature);
             Signature sig = Signature.getInstance("SHA256withRSA");
-            sig.initVerify(publicKeyObj);
+            sig.initVerify(publicKey);
             sig.update(data.getBytes(StandardCharsets.UTF_8));
             return sig.verify(decodedSignature);
 
         } catch (Exception e) {
             throw new RuntimeException("Signature verification failed", e);
         }
-    }
-
-    private PublicKey parsePublicKey(String publicKeyPem) throws Exception {
-        String key = publicKeyPem
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
-
-        byte[] decodedKey = Base64.getDecoder().decode(key);
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(decodedKey);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePublic(spec);
     }
 }

@@ -1,13 +1,13 @@
 package tech.axgiri.jwtstore.validation;
 
+import java.security.PublicKey;
+
 import tech.axgiri.jwtstore.common.dto.AlgorithmEnum;
-import tech.axgiri.jwtstore.common.dto.Header;
-import tech.axgiri.jwtstore.common.dto.Payload;
 import tech.axgiri.jwtstore.common.dto.RawSignature;
 
 public interface AlgorithmStrategy {
     
-    void validate(Header header, Payload payload, RawSignature signature, String key);
+    void validate(String header, String payload, RawSignature signature, PublicKey key);
     
     AlgorithmEnum getAlgorithm();
 }
