@@ -42,9 +42,7 @@ public class MyController {
    - RS256Validator verifies signature, expiration, issuer
 3. On success, Payload is stored in request attribute `jwt.payload`
 4. On failure, returns HTTP 401 with generic error message
-
-See [Architecture Diagram](docs/architecture/flow.puml) for detailed flow.
-
+   
 ## JWT Format Expected
 
 **Header:**
