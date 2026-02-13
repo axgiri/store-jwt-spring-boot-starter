@@ -1,10 +1,11 @@
 plugins {
 	`java-library`
+	`maven-publish`
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "tech.axgiri"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 description = "jwt starter module for `store_core`, `store_chat`, `store_notificationreport`. github.com/axgiri and axgiri.tech"
 
 java {
@@ -30,4 +31,31 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+publishing {
+	repositories {
+		maven {
+			val nexusUrl: String by project
+			val nexusUsername: String by project
+			val nexusPassword: String by project
+			isAllowInsecureProtocol = true
+			
+			url = if (version.toString().endsWith("SNAPSHOT")) {
+				uri("$nexusUrl/maven-snapshots")
+			} else {
+				uri("$nexusUrl/maven-releases")
+			}
+
+			credentials {
+				username = nexusUsername
+				password = nexusPassword
+			}
+		}
+	}
+	
+	publications {
+		register<MavenPublication>("maven") {
+			from(components["java"])
+		}
+	}
 }

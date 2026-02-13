@@ -1,1 +1,1 @@
-rootProject.name = "jwtstore-spring-boot-starter"
+rootProject.name = "store-jwt-spring-boot-starter"
