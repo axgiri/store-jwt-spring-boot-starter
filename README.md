@@ -1,14 +1,27 @@
-# JWT Spring Boot Starter
+# Store JWT Starter ([axgiri.tech](https://axgiri.tech))
 
-A lightweight Spring Boot starter library for JWT authentication in microservices. Validates RS256-signed tokens against a JWKS endpoint. Resource server pattern only — verification, no token generation.
+store_jwt_starter is an internal shared library for JWT validation in platform microservices. It provides one consistent token verification path and removes duplicated security implementation across services. This module follows a resource server pattern and focuses on verification only.
 
 ## Status
 
-**Private artifact.** Not published to public repositories. Use with Nexus or local Maven repository.
+Private artifact for the axgiri.tech ecosystem. It is intended for private Nexus or local Maven repositories.
 
-## Quick Start
+### Role in the architecture
 
-### 1. Configure application.yml
+store_jwt_starter is the trust adapter between token issuer and token consumers. It fetches public keys through JWKS, validates token signature and claims, and injects parsed payload into request context for business processing.
+
+It is used by service modules that need authenticated request context but do not need to implement full auth server behavior.
+
+### Functional scope
+
+- reads bearer token from incoming request headers
+- parses JWT header, payload, and signature
+- validates RS256 signature using JWKS sourced public key
+- validates issuer and expiration claims
+- exposes parsed payload as request attribute for downstream logic
+- supports auto configuration toggle through `jwt.starter.enabled`
+
+### Quick configuration
 
 ```yaml
 jwt:
@@ -18,7 +31,7 @@ jwt:
     jwks-uri: "https://your-auth-server.com/.well-known/jwks.json"
 ```
 
-### 2. Access JWT payload in controller
+### Access payload in controller
 
 ```java
 @RestController
@@ -33,24 +46,26 @@ public class MyController {
 }
 ```
 
-## How It Works
+### How validation works
 
-1. On startup, AutoConfig fetches PublicKey from JWKS endpoint
-2. For each request with `Authorization: Bearer <token>`:
-   - JwtAuthenticationFilter extracts token
-   - JwtTokenService parses header, payload, signature
-   - RS256Validator verifies signature, expiration, issuer
-3. On success, Payload is stored in request attribute `jwt.payload`
-4. On failure, returns HTTP 401 with generic error message
-   
-## JWT Format Expected
+1. On startup, auto configuration loads PublicKey from the configured JWKS endpoint
+2. For each request with `Authorization: Bearer <token>`
+   - `JwtAuthenticationFilter` extracts token
+   - `JwtTokenService` parses header, payload, and signature
+   - `RS256Validator` validates signature, expiration, and issuer
+3. On success, payload is stored in request attribute `jwt.payload`
+4. On failure, the request is rejected with HTTP 401
 
-**Header:**
+### JWT format expected
+
+Header:
+
 ```json
 {"alg": "RS256", "typ": "JWT"}
 ```
 
-**Payload:**
+Payload example:
+
 ```json
 {
   "iss": "https://your-auth-server.com",
@@ -63,23 +78,31 @@ public class MyController {
 
 Extra claims are allowed and ignored.
 
-## Disable
+### Data and integrations
 
-Set `jwt.starter.enabled: false` in application.yml to disable the filter.
+- integrates with auth JWKS endpoint for key discovery
+- plugs into Spring Boot auto configuration lifecycle
+- standardizes JWT validation behavior for store_core and store_chat
 
-## Build
+### Tech Stack
 
-```bash
-./gradlew build
-./gradlew publishToMavenLocal
-```
+- Java 21
+- Spring Boot AutoConfiguration
+- Servlet filter based request interception
+- RS256 JWT signature validation
+- JWKS public key discovery
+- Gradle Kotlin DSL and maven-publish
 
-## Dependencies
+### Platform impact
 
-- Java 21+
-- Spring Boot 4.0.2
-- No Spring Security required
+store_jwt_starter keeps authentication trust semantics identical across services and reduces long term security drift.
 
-## License
+## All microservices
 
-See LICENSE file.
+- https://github.com/axgiri/store-jwt-spring-boot-starter
+- https://github.com/axgiri/store_gateway
+- https://github.com/axgiri/store_infrastructure
+- https://github.com/axgiri/store_auth
+- https://github.com/axgiri/store_core
+- https://github.com/axgiri/store_chat
+- https://github.com/Scheldie/Notification_Reports
