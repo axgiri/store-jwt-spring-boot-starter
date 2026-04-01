@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.axgiri"
-version = "0.0.2-SNAPSHOT"
+version = "0.0.2"
 description = "jwt starter module for `store_core`, `store_chat`, `store_notificationreport`. github.com/axgiri and axgiri.tech"
 
 java {
@@ -35,24 +35,15 @@ tasks.withType<Test> {
 publishing {
 	repositories {
 		maven {
-			val nexusUrl: String by project
-			val nexusUsername: String by project
-			val nexusPassword: String by project
-			isAllowInsecureProtocol = true
-			
-			url = if (version.toString().endsWith("SNAPSHOT")) {
-				uri("$nexusUrl/maven-snapshots")
-			} else {
-				uri("$nexusUrl/maven-releases")
-			}
-
+			name = "GitHubPackages"
+			url = uri("https://maven.pkg.github.com/axgiri/store-jwt-spring-boot-starter")
 			credentials {
-				username = nexusUsername
-				password = nexusPassword
+				username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+				password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
 			}
 		}
 	}
-	
+
 	publications {
 		register<MavenPublication>("maven") {
 			from(components["java"])

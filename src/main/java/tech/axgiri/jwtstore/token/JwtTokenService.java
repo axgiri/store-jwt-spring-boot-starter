@@ -24,15 +24,13 @@ public class JwtTokenService {
 
     public String getRawHeader(String rawToken) {
         int indexOfFirstDot = indexOfDot(rawToken, 0);
-        String rawHeader = rawToken.substring(0, indexOfFirstDot);
-        return rawHeader;
+        return rawToken.substring(0, indexOfFirstDot);
     }
 
     public String getRawPayload(String rawToken) {
         int indexOfFirstDot = indexOfDot(rawToken, 0);
         int indexOfSecondDot = indexOfDot(rawToken, indexOfFirstDot + 1);
-        String rawPayload = rawToken.substring(indexOfFirstDot + 1, indexOfSecondDot);
-        return rawPayload;
+        return rawToken.substring(indexOfFirstDot + 1, indexOfSecondDot);
     }
 
     private RawSignature getSignature(String rawToken) {

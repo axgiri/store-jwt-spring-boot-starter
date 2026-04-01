@@ -1,4 +1,4 @@
-# Store JWT Starter ([axgiri.tech](https://axgiri.tech))
+# Store JWT Starter ([axgiri.tech](https://axgiri.tech/about))
 
 store_jwt_starter is an internal shared library for JWT validation in platform microservices. It provides one consistent token verification path and removes duplicated security implementation across services. This module follows a resource server pattern and focuses on verification only.
 
@@ -19,7 +19,7 @@ It is used by service modules that need authenticated request context but do not
 - validates RS256 signature using JWKS sourced public key
 - validates issuer and expiration claims
 - exposes parsed payload as request attribute for downstream logic
-- supports auto configuration toggle through `jwt.starter.enabled`
+- supports autoconfiguration toggle through `jwt.starter.enabled`
 
 ### Quick configuration
 
@@ -48,7 +48,7 @@ public class MyController {
 
 ### How validation works
 
-1. On startup, auto configuration loads PublicKey from the configured JWKS endpoint
+1. On startup, autoconfiguration loads PublicKey from the configured JWKS endpoint
 2. For each request with `Authorization: Bearer <token>`
    - `JwtAuthenticationFilter` extracts token
    - `JwtTokenService` parses header, payload, and signature
@@ -96,6 +96,22 @@ Extra claims are allowed and ignored.
 ### Platform impact
 
 store_jwt_starter keeps authentication trust semantics identical across services and reduces long term security drift.
+
+## Publishing to GitHub Packages
+
+This project is configured to publish artifacts to GitHub Packages.
+To publish a new version, execute the following command:
+
+```shell
+./gradlew publish
+```
+
+Authentication is required. Ensure that the `~/.gradle/gradle.properties` file on the build machine contains valid GitHub credentials:
+```properties
+gpr.user=github_username
+gpr.key=github_personal_access_token_with_write_packages_scope
+```
+For CI/CD environments, GitHub Actions can use the standard environment variables (`GITHUB_ACTOR` and `GITHUB_TOKEN`).
 
 ## All microservices
 
